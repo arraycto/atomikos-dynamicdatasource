@@ -1,0 +1,35 @@
+spring:
+  datasource:
+    muti:
+      - name: test
+        url: jdbc:mysql://192.168.253.131:3306/test??useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&useSSL=false
+        username: root
+        password: Frank_Lei
+        driver-class-name: com.mysql.jdbc.Driver
+      - name: mininglamp
+        url: jdbc:mysql://192.168.253.131:3306/mininglamp?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&useSSL=false
+        username: root
+        password: Frank_Lei
+        driver-class-name: com.mysql.jdbc.Driver
+      - name: integration
+        url: jdbc:mysql://62.234.103.251:3306/integration?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&useSSL=false
+        username: root
+        password: mlamp123456
+        driver-class-name: com.mysql.jdbc.Driver
+  jta:
+    enabled: false
+    transaction-manager-id: txManager
+    atomikos:
+      connectionfactory:
+        max-pool-size: 100
+        min-pool-size: 10
+      datasource:
+        max-pool-size: 100
+        min-pool-size: 5
+        maintenance-interval: 10
+        borrow-connection-timeout: 20
+        xa-data-source-class-name: com.mysql.jdbc.jdbc2.optional.MysqlXADataSource
+#        xa-data-source-class-name: com.alibaba.druid.pool.xa.DruidXADataSource
+      properties:
+        max-actives: 10
+        log-base-dir: /var/log

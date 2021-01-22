@@ -1,0 +1,12 @@
+#启动不同环境：
+#java-jar xxx.jar --spring.profiles.active=pro
+spring:
+  profiles:
+    active: dev
+  thymeleaf:
+    prefix: classpath:/templates/
+
+server:
+  port: 8008
+  servlet:
+    context-path: /

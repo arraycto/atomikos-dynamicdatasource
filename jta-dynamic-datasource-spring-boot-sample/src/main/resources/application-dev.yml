@@ -1,0 +1,15 @@
+mapper: #详细配见：https://github.com/abel533/Mapper/wiki/3.config
+  mappers:
+    - tk.mybatis.mapper.common.Mapper
+    - org.frank.BaseMapper
+  not-empty: false
+  identity: MYSQL #配置取回主键的方式（MYSQL: SELECT LAST_INSERT_ID()）
+  enum-as-simple-type: true #将枚举类按简单类型处理，需配置好对应的TypeHandler
+
+logging:
+  level:
+    org.mybatis: debug
+    org.springframework.jdbc: debug
+    com.atomikos: debug
+    org.springframework.boot.jta: debug
+    com.frank: debug
