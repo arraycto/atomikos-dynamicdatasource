@@ -1,6 +1,8 @@
 package com.frank.xa;
 
 import com.alibaba.druid.spring.boot.autoconfigure.DruidDataSourceAutoConfigure;
+import com.frank.xa.config.DynamicDataSourceAutoConfiguration;
+import com.frank.xa.config.MutiDataSourceProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -15,6 +17,7 @@ import tk.mybatis.spring.annotation.MapperScan;
         DataSourceAutoConfiguration.class,
         DruidDataSourceAutoConfigure.class,
         XADataSourceAutoConfiguration.class,
+        DynamicDataSourceAutoConfiguration.class
 })
 @EnableTransactionManagement
 public class Application {

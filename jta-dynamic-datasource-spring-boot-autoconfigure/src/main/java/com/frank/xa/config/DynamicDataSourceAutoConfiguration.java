@@ -1,6 +1,5 @@
 package com.frank.xa.config;
 
-import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -46,6 +45,8 @@ public class DynamicDataSourceAutoConfiguration implements BeanFactoryPostProces
 
     private final static ConfigurationPropertyNameAliases alias = new ConfigurationPropertyNameAliases();
 
+    private static final String XA_DATASOURCE_CLASS_NAME = "spring.jta.atomikos.datasource.xa-data-source-class-name";
+
     /**
      * 由于部分数据源配置属性名称可能存在差异，因此使用别名消除这些差异引起的问题
      */
@@ -77,13 +78,13 @@ public class DynamicDataSourceAutoConfiguration implements BeanFactoryPostProces
         Boolean jtaEnabled = this.env.getProperty("spring.jta.enabled", Boolean.class, false);
 
 
-        Class<?> datasourceType = null;
+        Class<?> datasourceType = void.class;
 
         // 检查数据源是否支持JTA分布式事务
         if (jtaEnabled) {
             logger.info("==> 已开启JTA分布式事务, 由atomikos支持");
-            String className = env.getProperty("spring.jta.atomikos.datasource.xa-data-source-class-name", String.class);
-            Assert.notNull(className, "JTA事务模式下必须指定spring.jta.atomikos.datasource.xa-data-source-class-name！");
+            String className = env.getProperty(XA_DATASOURCE_CLASS_NAME, String.class);
+            Assert.notNull(className, "JTA事务模式下必须指定: " + XA_DATASOURCE_CLASS_NAME);
             try {
                 datasourceType = Class.forName(className);
             } catch (ClassNotFoundException e) {
@@ -93,7 +94,6 @@ public class DynamicDataSourceAutoConfiguration implements BeanFactoryPostProces
                 throw new IllegalArgumentException(String.format("JTA事务模式下指定的数据源(%s)必须实现javax.sql.XADataSource", datasourceType));
             }
         }
-
 
         //多数据源的容器
         Map<Object, Object> dataSourceMap = new HashMap<>();
@@ -110,25 +110,13 @@ public class DynamicDataSourceAutoConfiguration implements BeanFactoryPostProces
                     throw new IllegalArgumentException(String.format("第【%d】个数据源缺少必名称参数name", dataSourcePropertiesList.indexOf(dataSourceProperties) + 1));
                 }
                 logger.info("==> 开始加载数据源【{}】. . .", name);
-
                 DataSource dataSource;
-
                 // 使用XADataSource + Atomikos 实现JTA事务
-                if (jtaEnabled) {
-                    AtomikosDataSourceBean atomikosDataSourceBean = binder.bind("spring.jta.atomikos.datasource", AtomikosDataSourceBean.class).get();
-                    XADataSource xaDataSource = this.bindXaProperties((XADataSource) datasourceType.newInstance(), dataSourceProperties);
-                    atomikosDataSourceBean.setXaDataSource(xaDataSource);
-                    atomikosDataSourceBean.setUniqueResourceName(name);
-                    dataSource = atomikosDataSourceBean;
-                } else {
-                    dataSource = dataSourceProperties.initializeDataSourceBuilder().build();
-                }
-
+                dataSource = jtaEnabled ? buildAtomikosDataSourceBean(datasourceType, dataSourceProperties) : dataSourceProperties.initializeDataSourceBuilder().build();
                 beanFactory.registerSingleton(name + "DataSource", dataSource);
                 logger.info("==> 注册datasource: {}", name + "DataSource");
                 beanFactory.registerSingleton(name + "JdbcTemplate", new JdbcTemplate(dataSource));
                 logger.info("==> 注册jdbctemplate: {}", name + "JdbcTemplate");
-
                 if (dataSourcePropertiesList.indexOf(dataSourceProperties) == 0) {
                     //设置默认数据源
                     dynamicDataSource.setDefaultTargetDataSource(dataSource);
@@ -149,11 +137,12 @@ public class DynamicDataSourceAutoConfiguration implements BeanFactoryPostProces
         logger.info("**************配置完毕！****************");
     }
 
-    private DataSource bind(Class<? extends DataSource> clazz, Map<String, Object> properties) {
-        ConfigurationPropertySource source = new MapConfigurationPropertySource(properties);
-        Binder binder = new Binder(source.withAliases(alias));
-        //通过类型绑定参数并获得实例对象
-        return binder.bind(ConfigurationPropertyName.EMPTY, Bindable.of(clazz)).get();
+    private AtomikosDataSourceBean buildAtomikosDataSourceBean(Class<?> datasourceType, DataSourceProperties dataSourceProperties) throws InstantiationException, IllegalAccessException {
+        AtomikosDataSourceBean atomikosDataSourceBean = binder.bind("spring.jta.atomikos.datasource", AtomikosDataSourceBean.class).get();
+        XADataSource xaDataSource = this.bindXaProperties((XADataSource) datasourceType.newInstance(), dataSourceProperties);
+        atomikosDataSourceBean.setXaDataSource(xaDataSource);
+        atomikosDataSourceBean.setUniqueResourceName(dataSourceProperties.getName());
+        return atomikosDataSourceBean;
     }
 
     private XADataSource bindXaProperties(XADataSource target, DataSourceProperties dataSourceProperties) {
@@ -173,19 +162,10 @@ public class DynamicDataSourceAutoConfiguration implements BeanFactoryPostProces
         return source.withAliases(aliases);
     }
 
-    @SuppressWarnings("unchecked")
-    private Class<?> getClass(String className) {
-        Class<?> datasourceClass;
-        if (StringUtils.hasText(className)) {
-            try {
-                datasourceClass = (Class<? extends DataSource>) Class.forName(className);
-            } catch (ClassNotFoundException e) {
-                throw new IllegalArgumentException("can not resolve class with className: " + className);
-            }
-        } else {
-            // 默认为hikariCP数据源，与springboot默认数据源保持一致
-            datasourceClass = HikariDataSource.class;
-        }
-        return datasourceClass;
+    private DataSource bind(Class<? extends DataSource> clazz, Map<String, Object> properties) {
+        ConfigurationPropertySource source = new MapConfigurationPropertySource(properties);
+        Binder binder = new Binder(source.withAliases(alias));
+        //通过类型绑定参数并获得实例对象
+        return binder.bind(ConfigurationPropertyName.EMPTY, Bindable.of(clazz)).get();
     }
 }

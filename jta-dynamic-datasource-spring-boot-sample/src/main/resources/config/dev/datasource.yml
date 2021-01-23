@@ -17,19 +17,19 @@ spring:
         password: mlamp123456
         driver-class-name: com.mysql.jdbc.Driver
   jta:
-    enabled: false
+    enabled: true
     transaction-manager-id: txManager
     atomikos:
       connectionfactory:
-        max-pool-size: 100
+        max-pool-size: 200
         min-pool-size: 10
       datasource:
-        max-pool-size: 100
-        min-pool-size: 5
+        max-pool-size: 200
+        min-pool-size: 10
         maintenance-interval: 10
         borrow-connection-timeout: 20
         xa-data-source-class-name: com.mysql.jdbc.jdbc2.optional.MysqlXADataSource
 #        xa-data-source-class-name: com.alibaba.druid.pool.xa.DruidXADataSource
       properties:
-        max-actives: 10
+        max-actives: 100
         log-base-dir: /var/log

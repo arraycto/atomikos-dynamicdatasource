@@ -1,7 +1,6 @@
 package com.frank.xa.config;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -17,7 +16,7 @@ public class DataSourceContextHolder {
     /**
      * 所有动态数据源的key集合，用于切换时校验数据源
      */
-    private static final List<Object> DS_KEYS = new ArrayList<>();
+    private static final Set<Object> DS_KEYS = new HashSet<>();
 
     public static synchronized void setDBType(String dbType) {
         contextHolder.set(dbType);
@@ -35,15 +34,12 @@ public class DataSourceContextHolder {
         return DS_KEYS.add(key);
     }
 
-    static boolean registerKey(Set key) {
-        return DS_KEYS.addAll(key);
+    static void registerKey(Set<Object> key) {
+        DS_KEYS.addAll(key);
     }
 
     /**
      * 校验数据源key
-     *
-     * @param key
-     * @return
      */
     public static boolean isValidKey(String key) {
         return DS_KEYS.contains(key);
